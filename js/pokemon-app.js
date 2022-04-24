@@ -13,11 +13,12 @@ const UPDATE_RATE = 100
 
 
 let landmarkCount = 0
+let visitedLandmarks = []
 
 let gameState = {
 	points: 0,
 	captured: [],
-	messages: []
+	messages: [`Win the game by trying to reach 500 points as fast as possible!`]
 }
 
 // Create an interactive map
@@ -47,7 +48,7 @@ let map = new InteractiveMap({
 
 			// make a polar offset (radius, theta) 
 			// from the map's center (units are *approximately* meters)
-			let position = clonePolarOffset(NU_CENTER, 400*Math.random() + 300, 20*Math.random())
+			let position = clonePolarOffset(NU_CENTER, 400 * Math.random() + 300, 20 * Math.random())
 			this.createLandmark({
 				pos: position,
 				name: words.getRandomWord(),
@@ -67,16 +68,16 @@ let map = new InteractiveMap({
 			console.log(landmark.openMapData)
 			landmark.name = landmark.openMapData.name
 		}
-		
+
 		// *You* decide how to create a marker
 		// These aren't used, but could be examples
 		landmark.idNumber = landmarkCount++
 		landmark.color = [Math.random(), 1, .5]
 
 		// Give it a random number of points
-		landmark.points = Math.floor(Math.random()*10 + 1)
+		landmark.points = Math.floor(Math.random() * 10 + 1)
 		return landmark
-	}, 
+	},
 
 	onEnterRange: (landmark, newLevel, oldLevel, dist) => {
 		// What happens when the user enters a range
@@ -85,17 +86,44 @@ let map = new InteractiveMap({
 		console.log("enter", landmark.name, newLevel)
 		if (newLevel == 2) {
 
-			// Add points to my gamestate
-			gameState.points += landmark.points
+			// // Add points to my gamestate
+			// gameState.points += landmark.points
+			if (gameState.points <= 500) {
 
-			
 
-			// Have we captured this?
-			if (!gameState.captured.includes(landmark.name)) {
-				gameState.captured.push(landmark.name)
-				// Add a message
-				gameState.messages.push(`You captured ${landmark.name} for ${landmark.points} points`)
+				//add landmark to the visitedLandmarks array
+				if (!visitedLandmarks.includes(landmark)) {
+					visitedLandmarks.push(landmark)
+					// Have we captured this?
+					// if (!gameState.captured.includes(landmark.name)) {
+					// 	gameState.captured.push(landmark.name)
+					// 	// Add a message
+					// 	gameState.messages.push(`You captured ${landmark.name}`)
+					// }
+					if (Math.random() <= 0.8) {
+						gameState.messages.push(`You captured a GOLDEN LANDMARK ${landmark.name} for ${landmark.points} points (4x points)`)
+						// gameState.capturedGolden.push(landmark)
+						gameState.points += landmark.points * 4;
+					}
+					else {
+						gameState.messages.push(`You captured ${landmark.name} for ${landmark.points} points`)
+						gameState.points += landmark.points
+					}
+
+				}
+
+				else {
+					gameState.messages.push(`You have already captured ${landmark.name}.`)
+					landmark.color = [Math.random(), 1, .5]
+				}
+
+
 			}
+			else{
+				gameState.messages = [`You've WON!!!! You captured ${gameState.points} points!!`]
+			}
+
+
 
 		}
 	},
@@ -103,11 +131,11 @@ let map = new InteractiveMap({
 	onExitRange: (landmark, newLevel, oldLevel, dist) => {
 		// What happens when the user EXITS a range around a landmark 
 		// e.g. (2->1, 0->-1)
-		
+
 		console.log("exit", landmark.name, newLevel)
 	},
-	
-	
+
+
 	featureToStyle: (landmark) => {
 		// How should we draw this landmark?
 		// Returns an object used to set up the drawing
@@ -118,11 +146,11 @@ let map = new InteractiveMap({
 				noBG: true // skip the background
 			}
 		}
-		
+
 		// Pick out a hue, we can reuse it for foreground and background
-		let hue = landmark.points*.1
+		let hue = landmark.points * .1
 		return {
-			label: landmark.name + "\n" + landmark.distanceToPlayer +"m",
+			label: landmark.name + "\n" + landmark.distanceToPlayer + "m",
 			fontSize: 8,
 
 			// Icons (in icon folder)
@@ -135,7 +163,7 @@ let map = new InteractiveMap({
 		}
 	},
 
-	
+
 })
 
 
@@ -150,8 +178,9 @@ window.onload = (event) => {
 			<div id="main-columns">
 
 				<div class="main-column" style="flex:1;overflow:scroll;max-height:200px">
-					(TODO, add your own gamestate)
-					{{gameState}}
+					{{gameState.messages}} <br>
+					CAPTURED: {{gameState.captured}} <br>
+					POINTS: {{gameState.points}}
 					
 				</div>
 
@@ -166,7 +195,7 @@ window.onload = (event) => {
 
 		data() {
 			return {
-			
+
 				map: map,
 				gameState: gameState
 			}
